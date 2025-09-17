@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Modelos de Inversión</title>
+  <style>
+    :root{ --bg:#1e3a8a; --card:#1e40af; --muted:#93c5fd; --accent:#fbbf24; --accent2:#f59e0b; --text:#f8fafc; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; }
+    *{box-sizing:border-box} 
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; background:linear-gradient(180deg,#1e3a8a,#1e40af); color:var(--text)}
+    header{padding:18px 24px; border-bottom:1px solid #3b82f6; display:flex; gap:14px; align-items:center; justify-content:space-between}
+    header h1{font-size:20px; margin:0; letter-spacing:.2px} header small{color:var(--muted)}
+    .container{display:grid; grid-template-columns:360px 1fr; gap:16px; padding:16px}
+    .card{background:#1e40af; border:1px solid #3b82f6; border-radius:18px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    input[type='text'], input[type='number'], textarea{width:100%; padding:10px 12px; border-radius:12px; border:1px solid #60a5fa; background:#1e3a8a; color:var(--text)}
+    input[type='checkbox']{transform:scale(1.15); margin-right:8px}
+    .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap; padding:8px}
+    .tab{padding:10px 14px; border-radius:999px; border:1px solid #60a5fa; background:#1e3a8a; color:var(--muted); cursor:pointer; user-select:none}
+    .tab.active{background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#1e3a8a; border-color:transparent}
+    .panel{display:none} .panel.active{display:block} .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    .crit{display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid #3b82f6; background:#1e3a8a; padding:10px 12px; border-radius:12px}
+    .score{font-variant-numeric:tabular-nums; background:#1e3a8a; border:1px solid #60a5fa; padding:6px 10px; border-radius:8px}
+    .total{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-top:1px dashed #60a5fa; margin-top:12px}
+    table{width:100%; border-collapse:collapse} th,td{padding:10px 12px; border-bottom:1px solid #3b82f6; text-align:left} th{color:#dbeafe; font-weight:600}
+    .pill{padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid #60a5fa}
+    .ok{background:#065f46; color:#6ee7b7; border-color:#047857} .warn{background:#92400e; color:#fcd34d; border-color:#d97706} .bad{background:#7f1d1d; color:#fca5a5; border-color:#dc2626}
+    .btn{display:inline-flex; align-items:center; gap:8px; background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#1e3a8a; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn.secondary{background:#1e3a8a; color:var(--text); border:1px solid #60a5fa}
+    .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .hint{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.4}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Calculadora de Modelos de Inversión</h1>
+      <small>Análisis de acciones con 10 metodologías de inversionistas legendarios</small>
+    </div>
+    <div class="row">
+      <button class="btn secondary" onclick="quickMode()">⚡ Modo rápido</button>
+      <button class="btn secondary" onclick="resetAll()">🗑️ Limpiar</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="card">
+      <h2 style="margin-top:0">Datos de la acción</h2>
+      <label>Ticker</label>
+      <input id="ticker" type="text" placeholder="AAPL, MSFT, GOOGL..." oninput="updateAll()" />
+      <label>Empresa</label>
+      <input id="company" type="text" placeholder="Apple Inc., Microsoft Corporation..." oninput="updateAll()" />
+
+      <h3 style="margin:16px 0 8px; color:var(--accent)">📊 Métricas financieras básicas</h3>
+      <div class="hint">Encuentra estos datos en Yahoo Finance, Google Finance, o reportes anuales</div>
+      
+      <div class="two">
+        <div><label>P/E ratio</label><input id="pe" type="number" step="0.1" placeholder="Ej: 28.5" oninput="updateAll()" /></div>
+        <div><label>P/B ratio</label><input id="pb" type="number" step="0.1" placeholder="Ej: 7.2" oninput="updateAll()" /></div>
+      </div>
+      <div class="two">
+        <div><label>EPS growth % anual</label><input id="eps" type="number" step="0.1" placeholder="Ej: 8.5" oninput="updateAll()" /></div>
+        <div><label>PEG ratio</label><input id="peg" type="number" step="0.01" placeholder="Ej: 3.2" oninput="updateAll()" /></div>
+      </div>
+
+      <h3 style="margin:16px 0 8px; color:var(--accent)">🎯 Datos de mercado</h3>
+      <div class="hint">Encuentra en sitios como TipRanks, Seeking Alpha, o brokers</div>
+      
+      <div class="two">
+        <div><label>% Analistas BUY</label><input id="buyPct" type="number" step="1" max="100" placeholder="Ej: 65" oninput="updateAll()" /></div>
+        <div><label>Smart Score (1-10)</label><input id="smart" type="number" step="1" min="1" max="10" placeholder="Ej: 8" oninput="updateAll()" /></div>
+      </div>
+
+      <h3 style="margin:16px 0 8px; color:var(--accent)">💡 Evaluación cualitativa</h3>
+      <div class="hint">Tu análisis personal - evalúa de 0 a 5</div>
+      
+      <div class="two">
+        <div><label>Moat defensivo (0-5)</label><input id="moat" type="number" step="1" min="0" max="5" placeholder="5 = monopolio" oninput="updateAll()" /></div>
+        <div><label>Calidad management (0-5)</label><input id="mgmt" type="number" step="1" min="0" max="5" placeholder="5 = excelente" oninput="updateAll()" /></div>
+      </div>
+      <div class="two">
+        <div><label>TAM/Mercado (0-5)</label><input id="tam" type="number" step="1" min="0" max="5" placeholder="5 = enorme" oninput="updateAll()" /></div>
+        <div><label>Fundador/CEO (0-5)</label><input id="founder" type="number" step="1" min="0" max="5" placeholder="5 = visionario" oninput="updateAll()" /></div>
+      </div>
+      <div class="two">
+        <div><label>Tu convicción (0-5)</label><input id="conv" type="number" step="1" min="0" max="5" placeholder="5 = muy seguro" oninput="updateAll()" /></div>
+        <div></div>
+      </div>
+
+      <h3 style="margin:16px 0 8px; color:var(--accent)">🏦 Para Reverse DCF</h3>
+      <div class="hint">Precio actual + datos del cash flow statement</div>
+      
+      <div class="two">
+        <div><label>Precio actual $</label><input id="currentPrice" type="number" step="0.01" placeholder="Ej: 180.00" oninput="updateAll()" /></div>
+        <div><label>FCF actual $M</label><input id="fcf" type="number" step="100" placeholder="Ej: 95000" oninput="updateAll()" /></div>
+      </div>
+      <div class="two">
+        <div><label>Acciones circulación M</label><input id="shares" type="number" step="10" placeholder="Ej: 15300" oninput="updateAll()" /></div>
+        <div><label>WACC % estimado</label><input id="wacc" type="number" step="0.1" placeholder="Ej: 8.5" oninput="updateAll()" /></div>
+      </div>
+
+      <h3 style="margin:16px 0 8px; color:var(--accent)">✅ Factores sí/no</h3>
+      <div class="hint">Marca las casillas que apliquen</div>
+      
+      <label><input id="divs" type="checkbox" onchange="updateAll()"/> Paga dividendos consistentes</label>
+      <label><input id="insiders" type="checkbox" onchange="updateAll()"/> Insiders están comprando</label>
+      <label><input id="hedge" type="checkbox" onchange="updateAll()"/> Hedge funds acumulando</label>
+      <label><input id="vola" type="checkbox" onchange="updateAll()"/> Volatilidad muy alta (>30%)</label>
+
+      <hr style="border-color:#3b82f6; margin:16px 0">
+      <h3 style="margin:0 0 8px">📚 Dónde encontrar los datos</h3>
+      <div class="hint" style="font-size:11px; line-height:1.4;">
+        <strong>Métricas financieras:</strong> Yahoo Finance, Google Finance, Morningstar<br>
+        <strong>Analistas:</strong> TipRanks, Seeking Alpha, tu broker<br>
+        <strong>Cash Flow:</strong> Reportes 10-K/10-Q de la empresa<br>
+        <strong>Evaluación cualitativa:</strong> Tu análisis personal
+      </div>
+    </aside>
+
+    <main class="card">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('AIAssistant')">AI Assistant</div>
+        <div class="tab" onclick="switchTab('Buffett')">Buffett</div>
+        <div class="tab" onclick="switchTab('TipRanks')">TipRanks</div>
+        <div class="tab" onclick="switchTab('Graham')">Graham</div>
+        <div class="tab" onclick="switchTab('Soros')">Soros</div>
+        <div class="tab" onclick="switchTab('Lynch')">Lynch</div>
+        <div class="tab" onclick="switchTab('Dalio')">Dalio</div>
+        <div class="tab" onclick="switchTab('Griffin')">Griffin</div>
+        <div class="tab" onclick="switchTab('MotleyFool')">Motley Fool</div>
+        <div class="tab" onclick="switchTab('ReverseDCF')">Reverse DCF</div>
+      </div>
+      
+      <div id="panels">
+        <div class="panel active" id="panel-AIAssistant">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>AI Assistant - Análisis Automático</strong><br>
+            <small style="color:var(--muted)">Genera el prompt para AI y llena automáticamente con datos de ejemplo</small>
+          </div>
+          <div id="content-AIAssistant">
+            <div style="margin-bottom:16px;">
+              <label>Ticker de la acción a analizar</label>
+              <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+                <input id="aiTicker" type="text" placeholder="Ej: AAPL, TSLA, NVDA..." style="flex:1;" />
+                <button class="btn" onclick="generatePrompt()">📝 Generar Prompt</button>
+              </div>
+              
+              <div id="promptOutput" style="display:none; margin-bottom:16px;">
+                <label>Prompt generado - Cópialo y úsalo con Claude/ChatGPT</label>
+                <div style="position:relative;">
+                  <textarea id="promptText" readonly style="width:100%; height:120px; padding:12px; border-radius:8px; border:1px solid #60a5fa; background:#0f172a; color:var(--text); font-family:monospace; font-size:12px; resize:vertical;"></textarea>
+                  <button class="btn secondary" onclick="copyPrompt()" style="position:absolute; top:8px; right:8px; padding:4px 8px; font-size:11px;">📋 Copiar</button>
+                </div>
+              </div>
+            </div>
+            
+            <div style="border-top:1px solid #3b82f6; padding-top:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h4 style="margin:0;">Área de datos obtenidos del AI</h4>
+                <button class="btn" onclick="loadParsedData()" id="loadDataBtn" disabled>📊 Cargar datos a calculadora</button>
+              </div>
+              
+              <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:12px;">
+                <label>Opción 1: Pega aquí la respuesta del AI con los datos financieros:</label>
+                <textarea id="aiResponse" placeholder="Pega aquí la respuesta completa del AI con los datos financieros de la acción..." style="width:100%; height:120px; margin-top:8px; font-size:11px; line-height:1.3;" oninput="parseAIResponse()"></textarea>
+                
+                <div style="margin-top:12px; padding-top:12px; border-top:1px dashed #60a5fa;">
+                  <label>Opción 2: Sube un archivo PDF o Markdown:</label>
+                  <div style="margin-top:8px;">
+                    <input type="file" id="fileInput" accept=".pdf,.md,.markdown,.txt" style="display:none;" onchange="handleFileUpload()" />
+                    <button class="btn secondary" onclick="document.getElementById('fileInput').click()" style="width:100%;">
+                      📁 Seleccionar archivo (PDF, MD, TXT)
+                    </button>
+                  </div>
+                  <div id="fileStatus" style="margin-top:8px; font-size:11px; color:var(--muted);"></div>
+                </div>
+              </div>
+              
+              <div id="parsedDataPreview" style="background:#1e3a8a; padding:12px; border-radius:8px; font-size:12px; line-height:1.4; display:none;">
+                <strong>Vista previa de datos detectados:</strong>
+                <div id="detectedData" style="margin-top:8px;"></div>
+              </div>
+              
+              <div style="border-top:1px dashed #3b82f6; padding-top:12px; margin-top:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <strong>O usa datos de ejemplo - RKLB:</strong>
+                  <button class="btn secondary" onclick="loadRKLBData()">📊 Cargar RKLB</button>
+                </div>
+                <div style="font-size:11px; color:var(--muted);">
+                  Datos de Rocket Lab del análisis previo para probar la calculadora
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel" id="panel-Buffett">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Warren Buffett - Value Cualitativo</strong><br>
+            <small style="color:var(--muted)">Busca negocios entendibles con moats defensivos y management confiable</small>
+          </div>
+          <div id="content-Buffett">Ingresa datos para ver el análisis de Buffett</div>
+        </div>
+        
+        <div class="panel" id="panel-TipRanks">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>TipRanks - Data-driven</strong><br>
+            <small style="color:var(--muted)">Análisis basado en datos agregados de analistas y métricas del mercado</small>
+          </div>
+          <div id="content-TipRanks">Ingresa datos para ver el análisis de TipRanks</div>
+        </div>
+        
+        <div class="panel" id="panel-Graham">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Benjamin Graham - Value Cuantitativo</strong><br>
+            <small style="color:var(--muted)">Métricas baratas con margen de seguridad cuantificable</small>
+          </div>
+          <div id="content-Graham">Ingresa datos para ver el análisis de Graham</div>
+        </div>
+        
+        <div class="panel" id="panel-Lynch">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Peter Lynch - GARP</strong><br>
+            <small style="color:var(--muted)">Growth at Reasonable Price - empresas en crecimiento a precio justo</small>
+          </div>
+          <div id="content-Lynch">Ingresa datos para ver el análisis de Lynch</div>
+        </div>
+        
+        <div class="panel" id="panel-Soros">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>George Soros - Macro & Reflexividad</strong><br>
+            <small style="color:var(--muted)">Desequilibrios macro y dinámicas de percepción del mercado</small>
+          </div>
+          <div id="content-Soros">Ingresa datos para ver el análisis de Soros</div>
+        </div>
+        
+        <div class="panel" id="panel-Dalio">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Ray Dalio - All Weather</strong><br>
+            <small style="color:var(--muted)">Diversificación y resistencia en múltiples escenarios económicos</small>
+          </div>
+          <div id="content-Dalio">Ingresa datos para ver el análisis de Dalio</div>
+        </div>
+        
+        <div class="panel" id="panel-Griffin">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Ken Griffin - Quant Multi-strategy</strong><br>
+            <small style="color:var(--muted)">Estrategias cuantitativas y alta frecuencia con múltiples enfoques</small>
+          </div>
+          <div id="content-Griffin">Ingresa datos para ver el análisis de Griffin</div>
+        </div>
+        
+        <div class="panel" id="panel-MotleyFool">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Motley Fool - Buy & Hold Growth</strong><br>
+            <small style="color:var(--muted)">Empresas disruptivas con potencial de crecimiento a largo plazo</small>
+          </div>
+          <div id="content-MotleyFool">Ingresa datos para ver el análisis de Motley Fool</div>
+        </div>
+        
+        <div class="panel" id="panel-ReverseDCF">
+          <div style="margin-bottom:12px; padding:8px; background:#1e3a8a; border-radius:8px;">
+            <strong>Reverse DCF - Valoración Intrínseca</strong><br>
+            <small style="color:var(--muted)">Calcula qué crecimiento implica el precio actual vs valor intrínseco</small>
+          </div>
+          <div id="content-ReverseDCF">Ingresa datos para ver el análisis DCF</div>
+        </div>
+      </div>
+      
+      <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0">Consolidado</h3>
+        <div id="summaryTable">Ingresa datos de la acción para ver el análisis consolidado de todos los inversionistas</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Modelos de inversión (versión simplificada para demo)
+    const models = {
+      'Buffett': {
+        name: 'Warren Buffett - Value Cualitativo',
+        criteria: [
+          { name: 'Entiendo el negocio', weight: 10, fn: (d) => d.moat >= 3 && d.tam >= 3 ? 10 : d.moat >= 2 ? 6 : 3 },
+          { name: 'Moat defensivo', weight: 30, fn: (d) => d.moat * 2 },
+          { name: 'Management confiable', weight: 30, fn: (d) => d.mgmt * 2 },
+          { name: 'Precio < Valor intrínseco', weight: 20, fn: (d) => d.pe ? (d.pe < 20 ? 10 : d.pe < 25 ? 6 : d.pe < 35 ? 3 : 1) : 0 },
+          { name: 'Horizonte 10-20 años', weight: 10, fn: (d) => d.moat >= 4 && d.mgmt >= 4 ? 10 : d.moat >= 3 ? 7 : 4 }
+        ]
+      },
+      'TipRanks': {
+        name: 'TipRanks - Data-driven',
+        criteria: [
+          { name: '% Analistas Buy', weight: 25, fn: (d) => d.buyPct ? (d.buyPct / 10) : 5 },
+          { name: 'Insiders comprando', weight: 15, fn: (d) => d.insiders ? 10 : 2 },
+          { name: 'Hedge funds posicionados', weight: 25, fn: (d) => d.hedge ? 8 : 4 },
+          { name: 'Smart Score', weight: 25, fn: (d) => d.smart || 5 },
+          { name: 'Historial analistas preciso', weight: 10, fn: (d) => d.buyPct && d.smart ? Math.min(10, (d.buyPct/10 + d.smart)/2 * 2) : 6 }
+        ]
+      },
+      'Graham': {
+        name: 'Benjamin Graham - Value Cuantitativo',
+        criteria: [
+          { name: 'P/E < 15', weight: 20, fn: (d) => d.pe ? (d.pe < 15 ? 10 : 0) : 0 },
+          { name: 'P/B < 1.5', weight: 20, fn: (d) => d.pb ? (d.pb < 1.5 ? 10 : 0) : 0 },
+          { name: 'Margen de seguridad ≥30%', weight: 40, fn: (d) => d.pe && d.pe < 12 ? 10 : d.pe && d.pe < 18 ? 5 : 0 },
+          { name: 'Dividendos consistentes', weight: 10, fn: (d) => d.divs ? 10 : 0 },
+          { name: 'Diversificación', weight: 10, fn: (d) => 5 }
+        ]
+      },
+      'Lynch': {
+        name: 'Peter Lynch - GARP',
+        criteria: [
+          { name: 'Producto cotidiano', weight: 10, fn: (d) => d.tam >= 3 ? 10 : 5 },
+          { name: 'EPS growth >15%', weight: 40, fn: (d) => d.eps ? (d.eps > 20 ? 10 : d.eps > 15 ? 8 : d.eps > 10 ? 5 : 2) : 0 },
+          { name: 'PEG < 1', weight: 10, fn: (d) => d.peg ? (d.peg < 1 ? 10 : 0) : 0 },
+          { name: 'Potencial multibagger', weight: 40, fn: (d) => d.eps && d.eps > 25 && d.tam >= 4 ? 10 : d.eps && d.eps > 15 ? 5 : 1 }
+        ]
+      },
+      'Soros': {
+        name: 'George Soros - Macro & Reflexividad',
+        criteria: [
+          { name: 'Desequilibrio macro', weight: 25, fn: (d) => d.tam >= 4 ? 8 : d.tam >= 3 ? 6 : 3 },
+          { name: 'Mercado ignora oportunidad', weight: 25, fn: (d) => d.pe && d.pe < 20 ? 8 : d.buyPct && d.buyPct < 50 ? 6 : 2 },
+          { name: 'Reflexividad positiva', weight: 20, fn: (d) => d.moat >= 4 ? 8 : d.moat >= 3 ? 6 : 3 },
+          { name: 'Convicción en tesis', weight: 20, fn: (d) => d.conv * 2 },
+          { name: 'Flexibilidad', weight: 10, fn: (d) => d.vola ? 3 : 7 }
+        ]
+      },
+      'Dalio': {
+        name: 'Ray Dalio - All Weather',
+        criteria: [
+          { name: 'Cobertura escenarios macro', weight: 25, fn: (d) => d.moat >= 3 && !d.vola ? 8 : d.moat >= 2 ? 6 : 4 },
+          { name: 'Diversificación ingresos', weight: 25, fn: (d) => d.tam >= 4 ? 8 : d.tam >= 3 ? 6 : 4 },
+          { name: 'Backtesting sólido', weight: 25, fn: (d) => d.mgmt >= 4 && d.moat >= 3 ? 8 : d.mgmt >= 3 ? 6 : 4 },
+          { name: 'Disciplina de capital', weight: 5, fn: (d) => d.divs || d.mgmt >= 4 ? 10 : 5 },
+          { name: 'Baja emocionalidad', weight: 20, fn: (d) => d.vola ? 4 : 8 }
+        ]
+      },
+      'Griffin': {
+        name: 'Ken Griffin - Quant Multi-strategy',
+        criteria: [
+          { name: 'Estrategias múltiples', weight: 15, fn: (d) => d.tam >= 3 ? 10 : 5 },
+          { name: 'Datos cuantitativos', weight: 30, fn: (d) => d.smart ? d.smart : d.buyPct ? (d.buyPct / 10) : 5 },
+          { name: 'Velocidad ejecución', weight: 25, fn: (d) => d.tam >= 4 ? 10 : d.tam >= 3 ? 8 : 5 },
+          { name: 'Baja correlación', weight: 15, fn: (d) => d.vola ? 8 : 2 },
+          { name: 'Ajustes diarios', weight: 15, fn: (d) => 7 }
+        ]
+      },
+      'MotleyFool': {
+        name: 'Motley Fool - Buy & Hold Growth',
+        criteria: [
+          { name: 'Disruptiva', weight: 25, fn: (d) => d.founder >= 4 ? 8 : d.founder >= 3 ? 6 : d.tam >= 4 ? 5 : 3 },
+          { name: 'TAM global gigante', weight: 25, fn: (d) => d.tam * 2 },
+          { name: 'Fundador visionario', weight: 25, fn: (d) => d.founder * 2 },
+          { name: 'Horizonte 10-20 años', weight: 20, fn: (d) => d.moat * 2 },
+          { name: 'Volatilidad manejable', weight: 5, fn: (d) => d.vola ? 2 : 10 }
+        ]
+      },
+      'ReverseDCF': {
+        name: 'Reverse DCF - Valoración Intrínseca',
+        criteria: [
+          { name: 'FCF per Share actual', weight: 15, fn: (d) => {
+            if (!d.fcf || !d.shares) return 0;
+            const fcfPerShare = d.fcf / d.shares;
+            return Math.min(10, Math.abs(fcfPerShare) / 2);
+          }},
+          { name: 'Crecimiento implícito necesario', weight: 40, fn: (d) => {
+            if (!d.currentPrice || !d.fcf || !d.shares || !d.wacc) return 0;
+            const fcfPerShare = d.fcf / d.shares;
+            if (fcfPerShare <= 0) return 2;
+            const impliedGrowth = Math.pow((d.currentPrice * (d.wacc/100 - 0.02)) / fcfPerShare, 1/10) - 1;
+            const impliedGrowthPct = impliedGrowth * 100;
+            
+            if (impliedGrowthPct < 0) return 2;
+            if (impliedGrowthPct < 5) return 9;
+            if (impliedGrowthPct < 10) return 10;
+            if (impliedGrowthPct < 15) return 8;
+            if (impliedGrowthPct < 25) return 6;
+            return 3;
+          }},
+          { name: 'Margen de seguridad', weight: 25, fn: (d) => {
+            if (!d.currentPrice || !d.fcf || !d.shares || !d.wacc || d.fcf <= 0) return 0;
+            const fcfPerShare = d.fcf / d.shares;
+            const conservativeGrowth = d.eps ? Math.min(d.eps/100, 0.12) : 0.08;
+            
+            const intrinsicValue = fcfPerShare * (1 + conservativeGrowth) / (d.wacc/100 - conservativeGrowth);
+            const marginOfSafety = (intrinsicValue - d.currentPrice) / d.currentPrice;
+            
+            if (marginOfSafety > 0.3) return 10;
+            if (marginOfSafety > 0.15) return 8;
+            if (marginOfSafety > 0) return 6;
+            if (marginOfSafety > -0.15) return 4;
+            return 2;
+          }},
+          { name: 'Calidad del FCF', weight: 20, fn: (d) => {
+            let score = 5;
+            if (d.moat >= 4) score += 3;
+            if (d.mgmt >= 4) score += 2;
+            if (d.divs) score += 1;
+            return Math.min(10, score);
+          }}
+        ]
+      }
+    };
+
+    // Obtener datos del formulario
+    function getData() {
+      return {
+        ticker: document.getElementById('ticker').value.toUpperCase(),
+        company: document.getElementById('company').value,
+        pe: parseFloat(document.getElementById('pe').value) || null,
+        pb: parseFloat(document.getElementById('pb').value) || null,
+        eps: parseFloat(document.getElementById('eps').value) || null,
+        peg: parseFloat(document.getElementById('peg').value) || null,
+        buyPct: parseFloat(document.getElementById('buyPct').value) || null,
+        smart: parseFloat(document.getElementById('smart').value) || null,
+        moat: parseFloat(document.getElementById('moat').value) || 0,
+        mgmt: parseFloat(document.getElementById('mgmt').value) || 0,
+        tam: parseFloat(document.getElementById('tam').value) || 0,
+        founder: parseFloat(document.getElementById('founder').value) || 0,
+        conv: parseFloat(document.getElementById('conv').value) || 0,
+        currentPrice: parseFloat(document.getElementById('currentPrice').value) || null,
+        fcf: parseFloat(document.getElementById('fcf').value) || null,
+        shares: parseFloat(document.getElementById('shares').value) || null,
+        wacc: parseFloat(document.getElementById('wacc').value) || null,
+        divs: document.getElementById('divs').checked,
+        insiders: document.getElementById('insiders').checked,
+        hedge: document.getElementById('hedge').checked,
+        vola: document.getElementById('vola').checked
+      };
+    }
+
+    // Calcular score de un modelo
+    function calculateScore(model, data) {
+      let totalScore = 0;
+      let totalWeight = 0;
+      
+      model.criteria.forEach(criterion => {
+        const score = criterion.fn(data);
+        const weightDecimal = criterion.weight / 100;
+        totalScore += score * weightDecimal;
+        totalWeight += weightDecimal;
+      });
+      
+      return totalScore;
+    }
+
+    // Obtener clase CSS para el score
+    function getScoreClass(score) {
+      if (score >= 7) return 'ok';
+      if (score >= 5) return 'warn';
+      return 'bad';
+    }
+
+    // Renderizar modelo individual
+    function renderModel(modelName, model, data) {
+      const score = calculateScore(model, data);
+      
+      let html = '';
+      
+      // Cálculos especiales para Reverse DCF
+      if (modelName === 'ReverseDCF' && data.currentPrice && data.fcf && data.shares && data.wacc && data.fcf > 0) {
+        const fcfPerShare = data.fcf / data.shares;
+        const years = 10;
+        const terminalGrowth = 0.02; // 2% crecimiento terminal
+        
+        // Crecimiento anual implícito necesario para justificar precio actual
+        const impliedGrowth = Math.pow((data.currentPrice * (data.wacc/100 - terminalGrowth)) / fcfPerShare, 1/years) - 1;
+        const impliedGrowthPct = impliedGrowth * 100;
+        
+        // Valor intrínseco con crecimiento conservador
+        const conservativeGrowth = data.eps ? Math.min(data.eps/100, 0.12) : 0.08;
+        const intrinsicValue = fcfPerShare * (1 + conservativeGrowth) / (data.wacc/100 - conservativeGrowth);
+        const marginOfSafety = (intrinsicValue - data.currentPrice) / data.currentPrice;
+        
+        // Determinar si es favorable
+        const isFavorable = impliedGrowthPct < 15 && impliedGrowthPct > 0;
+        const favorableClass = isFavorable ? 'ok' : impliedGrowthPct > 25 ? 'bad' : 'warn';
+        
+        html += `
+          <div style="background:#1e3a8a; padding:16px; border-radius:12px; margin-bottom:16px; border:2px solid ${isFavorable ? '#10b981' : impliedGrowthPct > 25 ? '#ef4444' : '#f59e0b'};">
+            <h4 style="margin:0 0 12px; color:var(--accent);">📊 Análisis de Crecimiento Requerido</h4>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+              <div>
+                <strong>FCF por acción actual:</strong><br>
+                <span style="font-size:18px; color:var(--accent);">${fcfPerShare.toFixed(2)}</span>
+              </div>
+              <div>
+                <strong>Precio actual:</strong><br>
+                <span style="font-size:18px;">${data.currentPrice}</span>
+              </div>
+            </div>
+            
+            <div style="text-align:center; padding:16px; background:#0f172a; border-radius:8px; margin-bottom:16px;">
+              <div style="font-size:14px; color:var(--muted); margin-bottom:8px;">Crecimiento anual necesario por 10 años:</div>
+              <div style="font-size:32px; font-weight:bold;" class="${favorableClass}">
+                ${impliedGrowthPct.toFixed(1)}%
+              </div>
+              <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+                ${isFavorable ? '✅ Crecimiento razonable' : impliedGrowthPct > 25 ? '❌ Crecimiento muy optimista' : '⚠️ Crecimiento optimista'}
+              </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:13px;">
+              <div><strong>Valor intrínseco conservador:</strong> ${intrinsicValue.toFixed(2)}</div>
+              <div><strong>Margen de seguridad:</strong> <span class="${marginOfSafety > 0 ? 'ok' : 'bad'}">${(marginOfSafety*100).toFixed(1)}%</span></div>
+            </div>
+            
+            <div style="margin-top:12px; padding:8px; background:#0f172a; border-radius:6px; font-size:12px; color:var(--muted);">
+              <strong>Interpretación:</strong> 
+              ${impliedGrowthPct < 0 ? 'El precio actual no se puede justificar con este FCF' :
+                impliedGrowthPct < 5 ? 'Crecimiento muy conservador requerido - excelente oportunidad' :
+                impliedGrowthPct < 10 ? 'Crecimiento moderado requerido - buena oportunidad' :
+                impliedGrowthPct < 15 ? 'Crecimiento sólido requerido - oportunidad aceptable' :
+                impliedGrowthPct < 25 ? 'Crecimiento alto requerido - riesgoso pero posible' :
+                'Crecimiento muy alto requerido - muy riesgoso'}
+            </div>
+          </div>
+        `;
+      } else if (modelName === 'ReverseDCF' && data.fcf && data.fcf <= 0) {
+        html += `
+          <div style="background:#7f1d1d; padding:16px; border-radius:12px; margin-bottom:16px; border:2px solid #ef4444;">
+            <h4 style="margin:0 0 12px; color:#fca5a5;">⚠️ FCF Negativo</h4>
+            <p>Esta empresa tiene Free Cash Flow negativo (${data.fcf}M), por lo que no se puede aplicar un DCF tradicional. Considera usar otros métodos de valoración como P/S ratio, EV/Revenue, o análisis de empresas en fase de crecimiento.</p>
+          </div>
+        `;
+      }
+      
+      html += '<div class="grid">';
+      model.criteria.forEach(criterion => {
+        const criterionScore = criterion.fn(data);
+        html += `
+          <div class="crit">
+            <span>${criterion.name} (${criterion.weight}%)</span>
+            <span class="score ${getScoreClass(criterionScore)}">${criterionScore.toFixed(1)}</span>
+          </div>
+        `;
+      });
+      html += '</div>';
+      
+      let interpretation = '';
+      if (modelName === 'Buffett') {
+        interpretation = score >= 7 ? '✅ Invertiría largo plazo' : score >= 5 ? '⚠️ Necesita más análisis' : '❌ No cumple criterios';
+      } else if (modelName === 'TipRanks') {
+        interpretation = score >= 7 ? '✅ Consenso muy positivo' : score >= 5 ? '⚠️ Consenso mixto' : '❌ Consenso negativo';
+      } else if (modelName === 'Graham') {
+        interpretation = score >= 6 ? '✅ Compra defensiva' : '❌ Demasiado cara';
+      } else if (modelName === 'Lynch') {
+        interpretation = score >= 7 ? '✅ Potencial multibagger' : score >= 5 ? '⚠️ Crecimiento moderado' : '❌ Muy madura';
+      } else if (modelName === 'Soros') {
+        interpretation = score >= 6 ? '✅ Tesis macro sólida' : score >= 4 ? '⚠️ Riesgo moderado' : '❌ Sin catalizador';
+      } else if (modelName === 'Dalio') {
+        interpretation = score >= 7 ? '✅ Excelente para All Weather' : score >= 5 ? '⚠️ Diversificación parcial' : '❌ Muy riesgosa';
+      } else if (modelName === 'Griffin') {
+        interpretation = score >= 7 ? '✅ Múltiples estrategias' : score >= 5 ? '⚠️ Trading selectivo' : '❌ Baja oportunidad';
+      } else if (modelName === 'MotleyFool') {
+        interpretation = score >= 7 ? '✅ Buy & Hold 10+ años' : score >= 5 ? '⚠️ Blue chip sólida' : '❌ Sin disrupción';
+      } else if (modelName === 'ReverseDCF') {
+        interpretation = score >= 7 ? '✅ Buen precio vs valor' : score >= 5 ? '⚠️ Precio justo' : '❌ Sobrevalorada';
+      }
+      
+      html += `
+        <div class="total">
+          <div>
+            <strong>Score ${model.name.split(' - ')[0]}</strong><br>
+            <small style="color:var(--muted)">${interpretation}</small>
+          </div>
+          <span class="pill ${getScoreClass(score)}">${score.toFixed(1)}/10</span>
+        </div>
+      `;
+      
+      return html;
+    }
+
+    // Renderizar resumen
+    function renderSummary(data) {
+      const scores = Object.entries(models).map(([key, model]) => ({
+        name: model.name.split(' - ')[0],
+        fullName: model.name,
+        score: calculateScore(model, data),
+        key: key
+      }));
+      
+      scores.sort((a, b) => b.score - a.score);
+      
+      let html = `
+        <table>
+          <thead>
+            <tr><th>Inversionista</th><th>Estilo</th><th>Score</th><th>Veredicto</th></tr>
+          </thead>
+          <tbody>
+      `;
+      
+      scores.forEach(({name, fullName, score, key}) => {
+        let recommendation = '';
+        if (key === 'Buffett') recommendation = score >= 7 ? 'COMPRAR' : score >= 5 ? 'ANALIZAR' : 'EVITAR';
+        else if (key === 'TipRanks') recommendation = score >= 7 ? 'CONSENSO+' : score >= 5 ? 'NEUTRO' : 'CONSENSO-';
+        else if (key === 'Graham') recommendation = score >= 6 ? 'COMPRAR' : 'MUY CARA';
+        else if (key === 'Lynch') recommendation = score >= 7 ? 'MULTIBAGGER' : score >= 5 ? 'HOLD' : 'MADURA';
+        else if (key === 'Soros') recommendation = score >= 6 ? 'MACRO TRADE' : 'SIN TESIS';
+        else if (key === 'Dalio') recommendation = score >= 7 ? 'ALL WEATHER' : score >= 5 ? 'PARCIAL' : 'RIESGOSA';
+        else if (key === 'Griffin') recommendation = score >= 7 ? 'MULTI-STRAT' : 'SELECTIVO';
+        else if (key === 'MotleyFool') recommendation = score >= 7 ? 'BUY & HOLD' : score >= 5 ? 'BLUE CHIP' : 'SIN GROWTH';
+        else if (key === 'ReverseDCF') recommendation = score >= 7 ? 'BUEN PRECIO' : score >= 5 ? 'PRECIO JUSTO' : 'SOBREVALORADA';
+        
+        const style = fullName.split(' - ')[1] || 'Mixed';
+        
+        html += `
+          <tr>
+            <td><strong>${name}</strong></td>
+            <td><small style="color:var(--muted)">${style}</small></td>
+            <td><span class="pill ${getScoreClass(score)}">${score.toFixed(1)}/10</span></td>
+            <td><strong>${recommendation}</strong></td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      
+      if (data.ticker) {
+        const avgScore = scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
+        const topInvestor = scores[0];
+        
+        html += `
+          <div style="margin-top:16px; padding:12px; background:#1e3a8a; border-radius:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong>${data.ticker} - Consenso General</strong>
+              <span class="pill ${getScoreClass(avgScore)}">${avgScore.toFixed(1)}/10</span>
+            </div>
+            <div style="font-size:14px; color:var(--muted);">
+              <strong>Mejor fit:</strong> ${topInvestor.name} (${topInvestor.score.toFixed(1)}/10)<br>
+              <strong>Estilo recomendado:</strong> ${topInvestor.fullName.split(' - ')[1]}
+            </div>
+          </div>
+        `;
+      }
+      
+      return html;
+    }
+
+    // Función principal de actualización
+    function updateAll() {
+      const data = getData();
+      
+      // Actualizar cada panel
+      Object.keys(models).forEach(key => {
+        const contentDiv = document.getElementById(`content-${key}`);
+        if (contentDiv) {
+          contentDiv.innerHTML = renderModel(key, models[key], data);
+        }
+      });
+      
+      // Actualizar resumen
+      document.getElementById('summaryTable').innerHTML = renderSummary(data);
+    }
+
+    // Cambiar tab
+    function switchTab(modelKey) {
+      // Actualizar tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Actualizar paneles
+      document.querySelectorAll('.panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.getElementById(`panel-${modelKey}`).classList.add('active');
+    }
+
+    // Generar prompt para AI
+    function generatePrompt() {
+      const ticker = document.getElementById('aiTicker').value.trim().toUpperCase();
+      if (!ticker) {
+        alert('Por favor ingresa un ticker válido (ej: AAPL, TSLA, NVDA)');
+        return;
+      }
+      
+      const prompt = `Analiza ${ticker} y organiza un reporte de inversión. Busca y recopila:
+- Métricas financieras básicas (P/E, P/B, EPS growth, PEG ratio, revenue growth)
+- Datos de analistas y price targets (% analistas BUY, smart score estimado)
+- Información sobre la empresa y management (CEO, calidad del management)
+- Ratios de solvencia y rentabilidad (ROE, ROA, current ratio, debt/equity)
+- Datos para DCF (precio actual, free cash flow, shares outstanding, WACC estimado)
+- Factores cualitativos (moat defensivo, TAM/mercado, fundador/CEO, volatilidad)
+
+Organiza todo en este formato exacto para mi calculadora de inversión:
+
+TICKER: ${ticker}
+EMPRESA: [nombre completo]
+PRECIO ACTUAL: $[precio]
+P/E RATIO: [valor o N/A]
+P/B RATIO: [valor o N/A] 
+EPS GROWTH %: [valor]
+PEG RATIO: [valor]
+% ANALISTAS BUY: [porcentaje]
+SMART SCORE (1-10): [tu evaluación]
+MOAT DEFENSIVO (0-5): [tu evaluación]
+CALIDAD MANAGEMENT (0-5): [tu evaluación]
+TAM/MERCADO (0-5): [tu evaluación]
+FUNDADOR/CEO (0-5): [tu evaluación]
+CONVICCIÓN SUGERIDA (0-5): [tu evaluación]
+FCF ACTUAL $M: [free cash flow en millones]
+ACCIONES CIRCULACIÓN M: [shares en millones]
+WACC % ESTIMADO: [basado en beta y sector]
+PAGA DIVIDENDOS: [SÍ/NO]
+INSIDERS COMPRANDO: [SÍ/NO]
+HEDGE FUNDS ACUMULANDO: [SÍ/NO]
+VOLATILIDAD ALTA >30%: [SÍ/NO]
+
+También proporciona un breve análisis de por qué recomiendas o no la inversión.`;
+
+      document.getElementById('promptText').value = prompt;
+      document.getElementById('promptOutput').style.display = 'block';
+    }
+
+    // Copiar prompt al clipboard
+    function copyPrompt() {
+      const promptText = document.getElementById('promptText');
+      promptText.select();
+      document.execCommand('copy');
+      
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = '✅ Copiado';
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 2000);
+    }
+
+    // Manejar carga de archivos
+    function handleFileUpload() {
+      const fileInput = document.getElementById('fileInput');
+      const fileStatus = document.getElementById('fileStatus');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        fileStatus.textContent = '';
+        return;
+      }
+      
+      fileStatus.textContent = `Procesando: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`;
+      fileStatus.style.color = 'var(--accent)';
+      
+      const fileType = file.type;
+      const fileName = file.name.toLowerCase();
+      
+      if (fileName.endsWith('.pdf')) {
+        handlePDFFile(file);
+      } else if (fileName.endsWith('.md') || fileName.endsWith('.markdown') || fileName.endsWith('.txt') || fileType.includes('text')) {
+        handleTextFile(file);
+      } else {
+        fileStatus.textContent = '❌ Formato no soportado. Use archivos PDF, MD, o TXT.';
+        fileStatus.style.color = 'var(--bad)';
+      }
+    }
+
+    // Manejar archivos de texto (MD, TXT)
+    function handleTextFile(file) {
+      const reader = new FileReader();
+      const fileStatus = document.getElementById('fileStatus');
+      
+      reader.onload = function(e) {
+        const content = e.target.result;
+        
+        // Cargar el contenido en el textarea
+        document.getElementById('aiResponse').value = content;
+        
+        // Ejecutar el parsing automático
+        parseAIResponse();
+        
+        fileStatus.textContent = `✅ Archivo cargado: ${file.name} - ${content.length} caracteres`;
+        fileStatus.style.color = 'var(--ok)';
+      };
+      
+      reader.onerror = function() {
+        fileStatus.textContent = '❌ Error al leer el archivo';
+        fileStatus.style.color = 'var(--bad)';
+      };
+      
+      reader.readAsText(file);
+    }
+
+    // Manejar archivos PDF
+    function handlePDFFile(file) {
+      const fileStatus = document.getElementById('fileStatus');
+      
+      // Intentar usar PDF.js si está disponible, sino usar extracción básica
+      if (typeof pdfjsLib !== 'undefined') {
+        extractPDFWithPDFJS(file);
+      } else {
+        // Fallback: intentar leer como texto (funciona para algunos PDFs simples)
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          const arrayBuffer = e.target.result;
+          const text = extractTextFromPDFBuffer(arrayBuffer);
+          
+          if (text && text.length > 50) {
+            document.getElementById('aiResponse').value = text;
+            parseAIResponse();
+            fileStatus.textContent = `✅ PDF procesado: ${file.name} - ${text.length} caracteres extraídos`;
+            fileStatus.style.color = 'var(--ok)';
+          } else {
+            fileStatus.textContent = '⚠️ PDF complejo. Intenta copiar y pegar el texto manualmente.';
+            fileStatus.style.color = 'var(--warn)';
+          }
+        };
+        
+        reader.onerror = function() {
+          fileStatus.textContent = '❌ Error al procesar PDF';
+          fileStatus.style.color = 'var(--bad)';
+        };
+        
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    // Extracción básica de texto de PDF (método fallback)
+    function extractTextFromPDFBuffer(arrayBuffer) {
+      try {
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const textDecoder = new TextDecoder('utf-8');
+        let text = textDecoder.decode(uint8Array);
+        
+        // Buscar texto entre streams comunes de PDF
+        const streamMatches = text.match(/stream\s*\n([\s\S]*?)\s*endstream/g);
+        let extractedText = '';
+        
+        if (streamMatches) {
+          streamMatches.forEach(stream => {
+            const streamContent = stream.replace(/^stream\s*\n/, '').replace(/\s*endstream$/, '');
+            // Filtrar caracteres legibles
+            const readable = streamContent.replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s+/g, ' ');
+            extractedText += readable + ' ';
+          });
+        }
+        
+        // Si no encontramos streams, buscar texto directo
+        if (!extractedText.trim()) {
+          extractedText = text.replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s+/g, ' ');
+        }
+        
+        return extractedText.trim();
+      } catch (error) {
+        console.error('Error extracting PDF text:', error);
+        return '';
+      }
+    }
+
+    // Función para inicializar PDF.js si está disponible (opcional)
+    function extractPDFWithPDFJS(file) {
+      const fileStatus = document.getElementById('fileStatus');
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const arrayBuffer = e.target.result;
+        
+        pdfjsLib.getDocument({data: arrayBuffer}).promise.then(function(pdf) {
+          let textContent = '';
+          const numPages = pdf.numPages;
+          let pagesProcessed = 0;
+          
+          for (let i = 1; i <= numPages; i++) {
+            pdf.getPage(i).then(function(page) {
+              page.getTextContent().then(function(content) {
+                const pageText = content.items.map(item => item.str).join(' ');
+                textContent += pageText + '\n';
+                pagesProcessed++;
+                
+                if (pagesProcessed === numPages) {
+                  document.getElementById('aiResponse').value = textContent;
+                  parseAIResponse();
+                  fileStatus.textContent = `✅ PDF procesado: ${numPages} páginas, ${textContent.length} caracteres`;
+                  fileStatus.style.color = 'var(--ok)';
+                }
+              });
+            });
+          }
+        }).catch(function(error) {
+          // Fallback al método básico
+          const text = extractTextFromPDFBuffer(arrayBuffer);
+          if (text) {
+            document.getElementById('aiResponse').value = text;
+            parseAIResponse();
+            fileStatus.textContent = `⚠️ PDF procesado con método básico: ${text.length} caracteres`;
+            fileStatus.style.color = 'var(--warn)';
+          } else {
+            fileStatus.textContent = '❌ No se pudo extraer texto del PDF';
+            fileStatus.style.color = 'var(--bad)';
+          }
+        });
+      };
+      
+      reader.readAsArrayBuffer(file);
+    }
+    let parsedData = {};
+
+    // Parsear respuesta del AI
+    function parseAIResponse() {
+      const response = document.getElementById('aiResponse').value;
+      const preview = document.getElementById('parsedDataPreview');
+      const loadBtn = document.getElementById('loadDataBtn');
+      
+      if (!response.trim()) {
+        preview.style.display = 'none';
+        loadBtn.disabled = true;
+        return;
+      }
+      
+      // Resetear datos parseados
+      parsedData = {};
+      
+      // Patrones de búsqueda más flexibles
+      const patterns = {
+        ticker: /(?:TICKER|SYMBOL):\s*([A-Z]{1,5})/i,
+        company: /(?:EMPRESA|COMPANY):\s*(.+?)(?:\n|$)/i,
+        currentPrice: /(?:PRECIO ACTUAL|CURRENT PRICE):\s*\$?([0-9]+\.?[0-9]*)/i,
+        pe: /(?:P\/E RATIO|PE RATIO):\s*([0-9]+\.?[0-9]*|N\/A)/i,
+        pb: /(?:P\/B RATIO|PB RATIO):\s*([0-9]+\.?[0-9]*|N\/A)/i,
+        eps: /(?:EPS GROWTH|REVENUE GROWTH).*?:\s*([0-9]+\.?[0-9]*)/i,
+        peg: /PEG RATIO:\s*([0-9]+\.?[0-9]*|N\/A)/i,
+        buyPct: /(?:% ANALISTAS BUY|ANALISTAS BUY):\s*([0-9]+)/i,
+        smart: /SMART SCORE.*?:\s*([0-9]+)/i,
+        moat: /MOAT DEFENSIVO.*?:\s*([0-5])/i,
+        mgmt: /(?:CALIDAD MANAGEMENT|MANAGEMENT).*?:\s*([0-5])/i,
+        tam: /TAM.*?:\s*([0-5])/i,
+        founder: /(?:FUNDADOR|CEO).*?:\s*([0-5])/i,
+        conv: /(?:CONVICCIÓN|CONVICTION).*?:\s*([0-5])/i,
+        fcf: /FCF ACTUAL.*?:\s*(-?[0-9]+)/i,
+        shares: /(?:ACCIONES CIRCULACIÓN|SHARES).*?:\s*([0-9]+\.?[0-9]*)/i,
+        wacc: /WACC.*?:\s*([0-9]+\.?[0-9]*)/i,
+        divs: /(?:PAGA DIVIDENDOS|DIVIDENDS):\s*(SÍ|NO|YES|SIN)/i,
+        insiders: /INSIDERS.*?:\s*(SÍ|NO|YES|SIN)/i,
+        hedge: /HEDGE FUNDS.*?:\s*(SÍ|NO|YES|SIN)/i,
+        vola: /VOLATILIDAD.*?:\s*(SÍ|NO|YES|SIN)/i
+      };
+      
+      // Extraer datos usando patrones
+      Object.keys(patterns).forEach(key => {
+        const match = response.match(patterns[key]);
+        if (match) {
+          let value = match[1].trim();
+          
+          // Limpiar y convertir valores
+          if (['pe', 'pb', 'eps', 'peg', 'currentPrice', 'fcf', 'shares', 'wacc'].includes(key)) {
+            if (value.toLowerCase() !== 'n/a') {
+              value = parseFloat(value.replace(/[^\d.-]/g, ''));
+              if (!isNaN(value)) {
+                parsedData[key] = value;
+              }
+            }
+          } else if (['moat', 'mgmt', 'tam', 'founder', 'conv', 'buyPct', 'smart'].includes(key)) {
+            value = parseInt(value);
+            if (!isNaN(value)) {
+              parsedData[key] = value;
+            }
+          } else if (['divs', 'insiders', 'hedge', 'vola'].includes(key)) {
+            parsedData[key] = /sí|yes/i.test(value);
+          } else {
+            parsedData[key] = value;
+          }
+        }
+      });
+      
+      // Mostrar preview
+      if (Object.keys(parsedData).length > 0) {
+        let previewHtml = '';
+        
+        if (parsedData.ticker) previewHtml += `<strong>${parsedData.ticker}</strong> - ${parsedData.company || 'Empresa'}<br>`;
+        if (parsedData.currentPrice) previewHtml += `💰 Precio: ${parsedData.currentPrice}<br>`;
+        if (parsedData.pe) previewHtml += `📊 P/E: ${parsedData.pe}<br>`;
+        if (parsedData.eps) previewHtml += `📈 Growth: ${parsedData.eps}%<br>`;
+        if (parsedData.buyPct) previewHtml += `👥 Analistas BUY: ${parsedData.buyPct}%<br>`;
+        if (parsedData.moat !== undefined) previewHtml += `🏰 Moat: ${parsedData.moat}/5<br>`;
+        if (parsedData.fcf) previewHtml += `💸 FCF: ${parsedData.fcf}M<br>`;
+        
+        const additionalCount = Object.keys(parsedData).length - 7;
+        if (additionalCount > 0) {
+          previewHtml += `<br><small>+ ${additionalCount} datos adicionales detectados</small>`;
+        }
+        
+        document.getElementById('detectedData').innerHTML = previewHtml;
+        preview.style.display = 'block';
+        loadBtn.disabled = false;
+      } else {
+        preview.style.display = 'none';
+        loadBtn.disabled = true;
+      }
+    }
+
+    // Cargar datos parseados a la calculadora
+    function loadParsedData() {
+      if (Object.keys(parsedData).length === 0) {
+        alert('No hay datos para cargar. Pega primero la respuesta del AI.');
+        return;
+      }
+      
+      // Limpiar campos actuales
+      resetAll();
+      
+      // Cargar datos básicos
+      if (parsedData.ticker) document.getElementById('ticker').value = parsedData.ticker;
+      if (parsedData.company) document.getElementById('company').value = parsedData.company;
+      
+      // Cargar métricas financieras
+      if (parsedData.pe) document.getElementById('pe').value = parsedData.pe;
+      if (parsedData.pb) document.getElementById('pb').value = parsedData.pb;
+      if (parsedData.eps) document.getElementById('eps').value = parsedData.eps;
+      if (parsedData.peg) document.getElementById('peg').value = parsedData.peg;
+      
+      // Cargar datos de mercado
+      if (parsedData.buyPct) document.getElementById('buyPct').value = parsedData.buyPct;
+      if (parsedData.smart) document.getElementById('smart').value = parsedData.smart;
+      
+      // Cargar evaluación cualitativa
+      if (parsedData.moat !== undefined) document.getElementById('moat').value = parsedData.moat;
+      if (parsedData.mgmt !== undefined) document.getElementById('mgmt').value = parsedData.mgmt;
+      if (parsedData.tam !== undefined) document.getElementById('tam').value = parsedData.tam;
+      if (parsedData.founder !== undefined) document.getElementById('founder').value = parsedData.founder;
+      if (parsedData.conv !== undefined) document.getElementById('conv').value = parsedData.conv;
+      
+      // Cargar datos DCF
+      if (parsedData.currentPrice) document.getElementById('currentPrice').value = parsedData.currentPrice;
+      if (parsedData.fcf) document.getElementById('fcf').value = parsedData.fcf;
+      if (parsedData.shares) document.getElementById('shares').value = parsedData.shares;
+      if (parsedData.wacc) document.getElementById('wacc').value = parsedData.wacc;
+      
+      // Cargar checkboxes
+      if (parsedData.divs !== undefined) document.getElementById('divs').checked = parsedData.divs;
+      if (parsedData.insiders !== undefined) document.getElementById('insiders').checked = parsedData.insiders;
+      if (parsedData.hedge !== undefined) document.getElementById('hedge').checked = parsedData.hedge;
+      if (parsedData.vola !== undefined) document.getElementById('vola').checked = parsedData.vola;
+      
+      // Actualizar cálculos
+      updateAll();
+      
+      // Mensaje de confirmación
+      const loadedFields = Object.keys(parsedData).length;
+      alert(`✅ Datos cargados exitosamente!\n\n${loadedFields} campos detectados y cargados en la calculadora.\n\nRevisa todas las pestañas para ver el análisis completo.`);
+    }
+    function loadRKLBData() {
+      // Limpiar campos primero
+      resetAll();
+      
+      // Datos básicos
+      document.getElementById('ticker').value = 'RKLB';
+      document.getElementById('company').value = 'Rocket Lab USA, Inc.';
+      
+      // Métricas financieras (algunos datos no están disponibles para RKLB)
+      document.getElementById('pe').value = ''; // P/E negativo debido a pérdidas
+      document.getElementById('pb').value = ''; // No disponible en los datos
+      document.getElementById('eps').value = '36'; // Revenue growth como proxy
+      document.getElementById('peg').value = '3.77';
+      
+      // Datos de mercado
+      document.getElementById('buyPct').value = '75'; // 75% Buy ratings
+      document.getElementById('smart').value = '7'; // Estimado basado en Strong Buy consensus
+      
+      // Evaluación cualitativa (basada en el análisis)
+      document.getElementById('moat').value = '3'; // Tecnología especializada pero competencia alta
+      document.getElementById('mgmt').value = '4'; // Peter Beck fundador visionario
+      document.getElementById('tam').value = '5'; // Mercado espacial en crecimiento exponencial
+      document.getElementById('founder').value = '5'; // Peter Beck fundador-CEO con track record sólido
+      document.getElementById('conv').value = '4'; // Fundamentales sólidos pero valoración alta
+      
+      // Datos para DCF
+      document.getElementById('currentPrice').value = '49.03';
+      document.getElementById('fcf').value = '-204'; // FCF negativo
+      document.getElementById('shares').value = '482.4';
+      document.getElementById('wacc').value = '12'; // Estimado basado en beta 2.37 y sector high-growth
+      
+      // Factores sí/no
+      document.getElementById('divs').checked = false; // No paga dividendos
+      document.getElementById('insiders').checked = true; // Actividad reciente positiva
+      document.getElementById('hedge').checked = false; // Decreció 2.4M shares
+      document.getElementById('vola').checked = true; // Beta 2.37 = muy alta volatilidad
+      
+      // Actualizar todos los cálculos
+      updateAll();
+      
+      // Mostrar mensaje de confirmación
+      alert('✅ Datos de RKLB cargados exitosamente!\n\nRevisa todas las pestañas para ver cómo cada inversionista evaluaría esta acción.');
+    }
+
+    // Modo rápido con datos de ejemplo
+    function quickMode() {
+      document.getElementById('ticker').value = 'DEMO';
+      document.getElementById('company').value = 'Demo Corporation';
+      document.getElementById('pe').value = (Math.random() * 30 + 15).toFixed(1);
+      document.getElementById('pb').value = (Math.random() * 5 + 1).toFixed(1);
+      document.getElementById('eps').value = (Math.random() * 25 + 5).toFixed(1);
+      document.getElementById('peg').value = (Math.random() * 3 + 1).toFixed(1);
+      document.getElementById('buyPct').value = Math.floor(Math.random() * 40 + 50);
+      document.getElementById('smart').value = Math.floor(Math.random() * 4 + 6);
+      document.getElementById('moat').value = Math.floor(Math.random() * 5 + 1);
+      document.getElementById('mgmt').value = Math.floor(Math.random() * 5 + 1);
+      document.getElementById('tam').value = Math.floor(Math.random() * 5 + 1);
+      document.getElementById('founder').value = Math.floor(Math.random() * 5 + 1);
+      document.getElementById('conv').value = Math.floor(Math.random() * 5 + 1);
+      document.getElementById('currentPrice').value = (Math.random() * 200 + 50).toFixed(2);
+      document.getElementById('fcf').value = Math.floor(Math.random() * 50000 + 10000);
+      document.getElementById('shares').value = Math.floor(Math.random() * 10000 + 5000);
+      document.getElementById('wacc').value = (Math.random() * 5 + 7).toFixed(1);
+      updateAll();
+    }
+
+    // Limpiar todo
+    function resetAll() {
+      document.querySelectorAll('input').forEach(input => {
+        if (input.type === 'checkbox') {
+          input.checked = false;
+        } else {
+          input.value = '';
+        }
+      });
+      document.getElementById('promptOutput').style.display = 'none';
+      updateAll();
+    }
+
+    // Hacer funciones globalmente accesibles
+    window.switchTab = switchTab;
+    window.quickMode = quickMode;
+    window.resetAll = resetAll;
+    window.updateAll = updateAll;
+    window.generatePrompt = generatePrompt;
+    window.copyPrompt = copyPrompt;
+    window.loadRKLBData = loadRKLBData;
+    window.parseAIResponse = parseAIResponse;
+    window.loadParsedData = loadParsedData;
+    window.handleFileUpload = handleFileUpload;
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+      updateAll();
+    });
+  </script>
+</body>
+</html>
